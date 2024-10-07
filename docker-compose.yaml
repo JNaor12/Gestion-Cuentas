@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  db:
+      image: postgres:14
+      container_name: postgres_db
+      environment:
+        POSTGRES_DB: django_db
+        POSTGRES_USER: django_user
+        POSTGRES_PASSWORD: 1234
+      env_file:
+        - .env
+      ports:
+        - "5432:5432"
+      volumes:
+        - db_data:/var/lib/postgresql/data
+      networks:
+        - app-network
+
+  # Servicio de Backend (Django)
+  backend:
+    container_name: django_backend
+    build: 
+      context: ./docker/backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+    command: "python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    networks: 
+      - app-network
+    # depends_on:
+    #   - db
+    env_file:
+      - .env
+
+  # Servicio de Frontend (Vue.js)
+  frontend:
+    container_name: vue_frontend
+    build:
+      context: ./docker/frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+    command: "npm run serve"
+    ports: 
+      - "8080:8080"
+    networks: 
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
